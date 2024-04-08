@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import sqlite3
 import os
-
+from google.cloud import bigquery
 
 # Init app
 app = Flask(__name__)
@@ -14,6 +14,25 @@ def dict_factory(cursor, row):
 
 # Flask maps HTTP requests to Python functions.
 # The process of mapping URLs to functions is called routing.
+
+@app.route('/api/v2/resources/bigquery-data', methods=['GET'])
+def get_bigquery_data():
+    client = bigquery.Client()
+
+    # Replace `your-project`, `your-dataset`, and `your-table` with your actual project ID, dataset name, and table name.
+    query = """
+        SELECT * FROM `proiectcc-419616.datasetcarti.carti`
+        LIMIT 10
+    """
+    query_job = client.query(query)  # Make an API request.
+
+    results = query_job.result()  # Waits for the query to finish
+
+    # Convert the results to a list of dictionaries to jsonify it later
+    rows = [dict(row) for row in results]
+
+    return jsonify(rows)
+
 @app.route('/', methods=['GET'])
 def home():
     return "<h1>Distant Reading Archive</h1><p>This is a prototype API</p>"
