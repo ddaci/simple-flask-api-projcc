@@ -1,9 +1,15 @@
 runtime: python39
 entrypoint: gunicorn -b :$PORT app:app
 
+env_variables:
+  GOOGLE_CLOUD_PROJECT: "proiectcc-419616"
+handlers:
+- url: /.*
+  script: auto
 
 env: standard
 instance_class: F1
+
 
 
 automatic_scaling:

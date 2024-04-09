@@ -6,15 +6,18 @@ from google.cloud import bigquery
 # Init app
 app = Flask(__name__)
 
+"""
+#functie pentru formatarea rezultatelor interogarii bazei de date SQQLite-nu avem nevoie pt gcp si bigquery
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
     return d
-
+"""
 # Flask maps HTTP requests to Python functions.
 # The process of mapping URLs to functions is called routing.
 
+#Ruta pentru datele BigQuery face acelasi lucru ca si  A route to return all of available entries in our catalog sqlite
 @app.route('/api/v2/resources/bigquery-data', methods=['GET'])
 def get_bigquery_data():
     client = bigquery.Client()
@@ -35,9 +38,9 @@ def get_bigquery_data():
 
 @app.route('/', methods=['GET'])
 def home():
-    return "<h1>Distant Reading Archive</h1><p>This is a prototype API</p>"
-
-# A route to return all of available entries i our catalog.
+    return "<h1>:)</h1><p>This is a prototype API</p>"
+"""
+# A route to return all of available entries in our catalog.
 @app.route('/api/v2/resources/books/all', methods=['GET'])
 def api_all():
     db_path = os.path.join('db', 'books.db')    
@@ -48,7 +51,7 @@ def api_all():
     all_books = cur.execute('SELECT * FROM books;').fetchall()
 
     return jsonify(all_books)
-
+"""
 @app.errorhandler(404)
 def page_not_found(e):
     return "<h1>404</h1><p>The resource could not be found</p>", 404
