@@ -56,6 +56,13 @@ def api_all():
 def page_not_found(e):
     return "<h1>404</h1><p>The resource could not be found</p>", 404
 
+"""
+Această rută dintr-o aplicație Flask definește un endpoint API care 
+permite utilizatorilor să filtreze și să caute cărți într-o bază de date 
+pe baza unor parametri specifici, cum ar fi id, published (data publicării), 
+și author (autor). Dacă nu sunt furnizați parametri sau dacă combinația de
+parametri nu returnează niciun rezultat, se returnează un răspuns 404 Not Found.
+
 @app.route('/api/v2/resources/books', methods=['GET'])
 def api_filter():
     query_parameters = request.args
@@ -92,7 +99,45 @@ def api_filter():
     results = cur.execute(query, to_filter).fetchall()
 
     return jsonify(results)
+"""
 
+
+@app.route('/api/v2/resources/books', methods=['GET'])
+def api_filter():
+    client = bigquery.Client()
+
+    query_parameters = request.args
+    id = query_parameters.get('id')
+    published = query_parameters.get('published')
+    author = query_parameters.get('author')
+
+    # Construiește interogarea BigQuery
+    query = 'SELECT * FROM proiectcc-419616.datasetcarti.carti WHERE'
+    conditions = []
+
+    if id:
+        conditions.append(f"id = '{id}'")
+
+    if published:
+        conditions.append(f"published = '{published}'")
+
+    if author:
+        conditions.append(f"author = '{author}'")
+
+    if not conditions:
+        return page_not_found(404)
+
+    query += ' AND '.join(conditions) + ' LIMIT 10;'
+
+    query_job = client.query(query)
+    results = query_job.result()
+
+    # Convertirea rezultatelor într-o listă de dicționare pentru a le putea serializa ca JSON
+    books = [dict(row) for row in results]
+
+    return jsonify(books)
+
+"""
 @app.route('/api/v2/resources/books', methods=['POST'])
 def add_book():
     
@@ -118,7 +163,7 @@ def add_book():
     
     return jsonify(request.get_json())
 
-
+"""
 # A method that runs the application server.
 if __name__ == "__main__":
     # Threaded option to enable multiple instances for multiple user access support
