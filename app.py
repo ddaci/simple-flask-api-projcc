@@ -2,7 +2,10 @@ from flask import Flask, request, jsonify
 import sqlite3
 import os
 from google.cloud import bigquery
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
 # Init app
 app = Flask(__name__)
 
@@ -42,7 +45,7 @@ def api_filter():
     client = bigquery.Client()
     # Assuming 'published' year is now handled as an integer
     published = 1988
-
+    logger.info(f"Executing query: {query}")
     # Correct query with parameter for type safety
     query = """
         SELECT * FROM `proiectcc-419616.datasetcarti.carti`
