@@ -40,10 +40,10 @@ def page_not_found(e):
 @app.route('/api/v2/resources/books', methods=['GET'])
 def api_filter():
     client = bigquery.Client()
-    # Hard-coding 'published' year as '1988'
-    published = '1988'
+    # Assuming 'published' year is now handled as an integer
+    published = 1988
 
-    # Safe query construction to avoid SQL injection
+    # Correct query with parameter for type safety
     query = """
         SELECT * FROM `proiectcc-419616.datasetcarti.carti`
         WHERE published = @published
@@ -51,15 +51,14 @@ def api_filter():
     """
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
-            bigquery.ScalarQueryParameter("published", "STRING", published)
+            bigquery.ScalarQueryParameter("published", "INT64", published)
         ]
     )
 
     query_job = client.query(query, job_config=job_config)  # API request with parameters
     results = query_job.result()  # Waits for the query to finish
 
-    # Convert the results to a list of dictionaries to jsonify it later
-    books = [dict(row) for row in results]
+    books = [dict(row) for row in results]  # Convert the results to a list of dictionaries to jsonify it later
 
     return jsonify(books)
 
