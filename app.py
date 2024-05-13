@@ -45,7 +45,7 @@ def api_filter():
     author = query_parameters.get('author')
 
     # Construiește interogarea BigQuery
-    base_query = 'SELECT * FROM `proiectcc-419616.datasetcarti.carti` WHERE'
+    base_query = 'SELECT * FROM `proiectcc-419616.datasetcarti.carti` WHERE '
     query_conditions = []
     params = []
 
