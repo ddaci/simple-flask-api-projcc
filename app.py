@@ -2,10 +2,7 @@ from flask import Flask, request, jsonify
 import sqlite3
 import os
 from google.cloud import bigquery
-import logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger()
 # Init app
 app = Flask(__name__)
 
@@ -40,31 +37,24 @@ def home():
 def page_not_found(e):
     return "<h1>404</h1><p>The resource could not be found</p>", 404
 
+
 @app.route('/api/v2/resources/books', methods=['GET'])
 def api_filter():
     client = bigquery.Client()
-    # Assuming 'published' year is now handled as an integer
-    published = 1988
-    logger.info(f"Executing query: {query}")
-    # Correct query with parameter for type safety
+
+    # Directly including the 'published' year in the query
     query = """
         SELECT * FROM `proiectcc-419616.datasetcarti.carti`
-        WHERE published = @published
+        WHERE published = 1988
         LIMIT 10;
     """
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("published", "INT64", published)
-        ]
-    )
 
-    query_job = client.query(query, job_config=job_config)  # API request with parameters
+    query_job = client.query(query)  # API request without parameters
     results = query_job.result()  # Waits for the query to finish
 
     books = [dict(row) for row in results]  # Convert the results to a list of dictionaries to jsonify it later
 
     return jsonify(books)
-
 """
 @app.route('/api/v2/resources/books', methods=['POST'])
 def add_book():
