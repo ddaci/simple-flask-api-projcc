@@ -1,19 +1,25 @@
 from flask import Flask, request, jsonify
+import sqlite3
+import os
 from google.cloud import bigquery
-from google.cloud import exceptions
-from sqlalchemy import create_engine, text
 
+# Init app
 app = Flask(__name__)
 
+"""
+#functie pentru formatarea rezultatelor interogarii bazei de date SQQLite-nu avem nevoie pt gcp si bigquery
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+"""
 
 
-# Configure your database URI here
-DATABASE_URI = 'postgres+psycopg2://username:password@host:port/database'
+# Flask maps HTTP requests to Python functions.
+# The process of mapping URLs to functions is called routing.
 
-engine = create_engine(DATABASE_URI)
-
-
-#Ruta pentru datele BigQuery face acelasi lucru ca si  A route to return all of available entries in our catalog sqlite
+# Ruta pentru datele BigQuery face acelasi lucru ca si  A route to return all of available entries in our catalog sqlite
 @app.route('/api/v2/resources/bigquery-data', methods=['GET'])
 def get_bigquery_data():
     client = bigquery.Client()
@@ -32,82 +38,140 @@ def get_bigquery_data():
 
     return jsonify(rows)
 
+
 @app.route('/', methods=['GET'])
 def home():
     return "<h1>:)</h1><p>This is a prototype API</p>"
 
+
+"""
+# A route to return all of available entries in our catalog.
+@app.route('/api/v2/resources/books/all', methods=['GET'])
+def api_all():
+    db_path = os.path.join('db', 'books.db')    
+    conn = sqlite3.connect(db_path)
+    # returns items from the database as dictionaries rather than lists
+    conn.row_factory = dict_factory
+    cur = conn.cursor()
+    all_books = cur.execute('SELECT * FROM books;').fetchall()
+
+    return jsonify(all_books)
+"""
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return "<h1>404</h1><p>The resource could not be found</p>", 404
-# Using a safe method to construct query
-
-
-# Configure your database URI here
-DATABASE_URI = 'postgres+psycopg2://username:password@host:port/database'
-engine = create_engine(DATABASE_URI)
-
-
-@app.route('/api/v2/resources/books', methods=['GET'])
-def api_filter():
-    published_year = request.args.get('published', '2012')  # Default to 2012 if not specified
-    sql_query = text("SELECT * FROM `proiectcc-419616.datasetcarti.carti` WHERE published = :published LIMIT 10")
-
-    # Execute the query with the user provided parameter
-    result = engine.execute(sql_query, {'published': published_year})
-    books = [dict(row) for row in result]
-
-    return jsonify(books)
-
-
-@app.route('/', methods=['GET'])
-def home():
-    return "<h1>Welcome to the API</h1><p>Use /api/v2/resources/books to get data.</p>"
 
 
 """
+Această rută dintr-o aplicație Flask definește un endpoint API care 
+permite utilizatorilor să filtreze și să caute cărți într-o bază de date 
+pe baza unor parametri specifici, cum ar fi id, published (data publicării), 
+și author (autor). Dacă nu sunt furnizați parametri sau dacă combinația de
+parametri nu returnează niciun rezultat, se returnează un răspuns 404 Not Found.
+
 @app.route('/api/v2/resources/books', methods=['GET'])
 def api_filter():
-    client = bigquery.Client()
     query_parameters = request.args
 
     id = query_parameters.get('id')
     published = query_parameters.get('published')
     author = query_parameters.get('author')
 
-    # Construiește interogarea BigQuery
-    base_query = 'SELECT * FROM `proiectcc-419616.datasetcarti.carti` WHERE '
-    query_conditions = []
-    params = []
+    query = 'SELECT * FROM books WHERE'
+    to_filter = []
 
     if id:
-        query_conditions.append(' id = @id')
-        params.append(bigquery.ScalarQueryParameter('id', 'STRING', id))
+        query += ' id=? AND'
+        to_filter.append(id)
 
     if published:
-        query_conditions.append(' published = @published')
-        params.append(bigquery.ScalarQueryParameter('published', 'STRING', published))
+        query += ' published=? AND'
+        to_filter.append(published)
 
     if author:
-        query_conditions.append(' author = @author')
-        params.append(bigquery.ScalarQueryParameter('author', 'STRING', author))
+        query += ' author=? AND'
+        to_filter.append(author)
 
-    # Verifică dacă există condiții de adăugat la interogare
-    if not query_conditions:
+    if not(id or published or author):
         return page_not_found(404)
 
-    # Finalizează construcția interogării cu condițiile specifice
-    final_query = f"{base_query} {' AND '.join(query_conditions)} LIMIT 10;"
-    job_config = bigquery.QueryJobConfig(query_parameters=params)
+    query = query[:-4] + ';'
 
-    try:
-        query_job = client.query(final_query, job_config=job_config)
-        results = query_job.result()
-        books = [dict(row) for row in results]
-        return jsonify(books)
-    except exceptions.GoogleCloudError as e:
-        return jsonify({"error": str(e)}), 500
-    except Exception as e:
-        return jsonify({"error": "An unexpected error occurred"}), 500
+    db_path = os.path.join('db', 'books.db')    
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = dict_factory
+    cur = conn.cursor()
+
+    results = cur.execute(query, to_filter).fetchall()
+
+    return jsonify(results)
+"""
+
+
+@app.route('/api/v2/resources/books', methods=['GET'])
+def api_filter():
+    client = bigquery.Client()
+
+    query_parameters = request.args
+    id = query_parameters.get('id')
+    published = query_parameters.get('published')
+    author = query_parameters.get('author')
+
+    # Construiește interogarea BigQuery
+    query = 'SELECT * FROM proiectcc-419616.datasetcarti.carti WHERE'
+    conditions = []
+
+    if id:
+        conditions.append(f"id = '{id}'")
+
+    if published:
+        conditions.append(f"published = '{published}'")
+
+    if author:
+        conditions.append(f"author = '{author}'")
+
+    if not conditions:
+        return page_not_found(404)
+
+    query += ' AND '.join(conditions) + ' LIMIT 10;'
+
+    query_job = client.query(query)
+    results = query_job.result()
+
+    # Convertirea rezultatelor într-o listă de dicționare pentru a le putea serializa ca JSON
+    books = [dict(row) for row in results]
+
+    return jsonify(books)
+
+
+"""
+@app.route('/api/v2/resources/books', methods=['POST'])
+def add_book():
+
+    # Receives the data in JSON format in a HTTP POST request
+    if not request.is_json:
+        return "<p>The content isn't of type JSON<\p>"
+
+    content = request.get_json()
+    title = content.get('title')
+    author = content.get('author')
+    published = content.get('published')
+    first_sentence = content.get('first_sentence')
+
+    # Save the data in db
+    db_path = os.path.join('db', 'books.db')    
+    conn = sqlite3.connect(db_path)
+    query = f'INSERT INTO books (title, author, published, first_sentence) \
+              VALUES ("{title}", "{author}", "{published}", "{first_sentence}");'
+
+    cur = conn.cursor()
+    cur.execute(query)
+    conn.commit()
+
+    return jsonify(request.get_json())
+
 """
 # A method that runs the application server.
 if __name__ == "__main__":
