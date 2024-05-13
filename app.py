@@ -1,11 +1,16 @@
 from flask import Flask, request, jsonify
 from google.cloud import bigquery
 from google.cloud import exceptions
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 
 app = Flask(__name__)
 
 
+
+# Configure your database URI here
+DATABASE_URI = 'postgres+psycopg2://username:password@host:port/database'
+
+engine = create_engine(DATABASE_URI)
 
 
 #Ruta pentru datele BigQuery face acelasi lucru ca si  A route to return all of available entries in our catalog sqlite
@@ -37,8 +42,27 @@ def page_not_found(e):
 # Using a safe method to construct query
 
 
-sql_query = text("SELECT * FROM `proiectcc-419616.datasetcarti.carti` WHERE published = :published LIMIT 10")
-result = connection.execute(sql_query, {'published': '2012'})
+# Configure your database URI here
+DATABASE_URI = 'postgres+psycopg2://username:password@host:port/database'
+engine = create_engine(DATABASE_URI)
+
+
+@app.route('/api/v2/resources/books', methods=['GET'])
+def api_filter():
+    published_year = request.args.get('published', '2012')  # Default to 2012 if not specified
+    sql_query = text("SELECT * FROM `proiectcc-419616.datasetcarti.carti` WHERE published = :published LIMIT 10")
+
+    # Execute the query with the user provided parameter
+    result = engine.execute(sql_query, {'published': published_year})
+    books = [dict(row) for row in result]
+
+    return jsonify(books)
+
+
+@app.route('/', methods=['GET'])
+def home():
+    return "<h1>Welcome to the API</h1><p>Use /api/v2/resources/books to get data.</p>"
+
 
 """
 @app.route('/api/v2/resources/books', methods=['GET'])
