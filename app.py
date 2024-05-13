@@ -40,12 +40,8 @@ def page_not_found(e):
 @app.route('/api/v2/resources/books', methods=['GET'])
 def api_filter():
     client = bigquery.Client()
-    query_parameters = request.args
-    published = query_parameters.get('published')
-
-    if not published:
-        # If 'published' parameter is not provided, return 404 error
-        return "<h1>404</h1><p>The resource could not be found. Please specify a publication date.</p>", 404
+    # Hard-coding 'published' year as '1988'
+    published = '1988'
 
     # Safe query construction to avoid SQL injection
     query = """
