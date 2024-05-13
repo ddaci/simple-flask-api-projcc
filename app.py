@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from google.cloud import bigquery
 from google.cloud import exceptions
+from sqlalchemy import text
 
 app = Flask(__name__)
 
@@ -33,8 +34,13 @@ def home():
 @app.errorhandler(404)
 def page_not_found(e):
     return "<h1>404</h1><p>The resource could not be found</p>", 404
+# Using a safe method to construct query
 
 
+sql_query = text("SELECT * FROM `proiectcc-419616.datasetcarti.carti` WHERE published = :published LIMIT 10")
+result = connection.execute(sql_query, {'published': '2012'})
+
+"""
 @app.route('/api/v2/resources/books', methods=['GET'])
 def api_filter():
     client = bigquery.Client()
@@ -78,7 +84,7 @@ def api_filter():
         return jsonify({"error": str(e)}), 500
     except Exception as e:
         return jsonify({"error": "An unexpected error occurred"}), 500
-
+"""
 # A method that runs the application server.
 if __name__ == "__main__":
     # Threaded option to enable multiple instances for multiple user access support
