@@ -50,15 +50,15 @@ def api_filter():
     params = []
 
     if id:
-        query_conditions.append('id = @id')
+        query_conditions.append(' id = @id')
         params.append(bigquery.ScalarQueryParameter('id', 'STRING', id))
 
     if published:
-        query_conditions.append('published = @published')
+        query_conditions.append(' published = @published')
         params.append(bigquery.ScalarQueryParameter('published', 'STRING', published))
 
     if author:
-        query_conditions.append('author = @author')
+        query_conditions.append(' author = @author')
         params.append(bigquery.ScalarQueryParameter('author', 'STRING', author))
 
     # Verifică dacă există condiții de adăugat la interogare
