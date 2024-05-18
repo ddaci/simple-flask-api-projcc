@@ -48,7 +48,7 @@ def get_books_by_author():
 
     client = bigquery.Client()
     query = f"""
-        SELECT * FROM `projectcloudmasterid.books.books`
+        SELECT * FROM proiectcc-419616.datasetcarti.carti`
         WHERE author = '{author}'
     """
     query_job = client.query(query)
