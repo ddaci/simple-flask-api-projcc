@@ -1,13 +1,9 @@
 from flask import Flask, request, jsonify
-import sqlite3
-import os
 from google.cloud import bigquery
 
 # Init app
 app = Flask(__name__)
 
-# Flask maps HTTP requests to Python functions.
-# The process of mapping URLs to functions is called routing.
 @app.route('/', methods=['GET'])
 def home():
     return """
@@ -15,9 +11,10 @@ def home():
     <p>/api/v2/resources/bigquery-data</p>
     <p>/api/v2/resources/books/by-author?author=David Brin</p>
     <p>/api/v2/resources/books/by-year?published_year=2005</p>
+    <p>/api/v2/resources/books</p>
     """
 
-# Endpoint pentru obținerea tuturor cărților din BigQuery
+# Endpoint for fetching data from BigQuery
 @app.route('/api/v2/resources/bigquery-data', methods=['GET'])
 def get_bigquery_data():
     client = bigquery.Client()
@@ -25,21 +22,16 @@ def get_bigquery_data():
         SELECT * FROM `proiectcc-419616.datasetcarti.carti`
         LIMIT 10
     """
-    query_job = client.query(query)  # Execută interogarea
-    results = query_job.result()  # Așteaptă finalizarea interogării
-
-    # Convertirea rezultatelor într-o listă de dicționare pentru a le serializa ca JSON
+    query_job = client.query(query)
+    results = query_job.result()
     rows = [dict(row) for row in results]
-
     return jsonify(rows)
 
-
-# Endpoint pentru obținerea cărților din BigQuery grupate dupa autor
+# Endpoint for fetching books by author
 @app.route('/api/v2/resources/books/by-author', methods=['GET'])
 def get_books_by_author():
     query_parameters = request.args
     author = query_parameters.get('author')
-
     if not author:
         return "<p>Parametrul 'author' trebuie specificat în URL. Exemplu: /api/v2/resources/books/by-author?author=David Brin</p>", 400
 
@@ -50,21 +42,16 @@ def get_books_by_author():
     """
     query_job = client.query(query)
     results = query_job.result()
-
     rows = [dict(row) for row in results]
-
     if not rows:
         return jsonify({'message': f'Nu s-au găsit cărți scrise de autorul {author}.'}), 404
-
     return jsonify(rows)
 
-
-# Endpoint pentru obținerea cărților din BigQuery grupate dupa an
+# Endpoint for fetching books by year
 @app.route('/api/v2/resources/books/by-year', methods=['GET'])
 def get_books_by_year():
     query_parameters = request.args
     published_year = query_parameters.get('published_year')
-
     if not published_year:
         return "<p>Parametrul 'published_year' trebuie specificat în URL. Exemplu: /api/v2/resources/books/by-year?published_year=2005</p>", 400
 
@@ -80,27 +67,21 @@ def get_books_by_year():
     )
     query_job = client.query(query, job_config=job_config)
     results = query_job.result()
-
     rows = [dict(row) for row in results]
-
     if not rows:
         return jsonify({'message': f'Nu s-au găsit cărți publicate în anul {published_year}.'}), 404
-
     return jsonify(rows)
 
-
+# Error handler for 404
 @app.errorhandler(404)
 def page_not_found(e):
     return "<h1>404</h1><p>The resource could not be found</p>", 404
 
-
-
-# Endpoint 4 pentru adaugarea unei carti
-# Funcția add_book() permite adăugarea unei noi cărți în baza de date BigQuery. Aceasta primește datele cărții sub formă de JSON într-o cerere POST și le adaugă în BigQuery. Dacă adăugarea reușește, returnează un mesaj de succes; altfel, returnează erorile întâmpinate
+# Endpoint for adding a book
 @app.route('/api/v2/resources/books', methods=['POST'])
 def add_book():
     if not request.is_json:
-        return "<p>The content isn't of type JSON</p>"
+        return "<p>The content isn't of type JSON</p>", 400
 
     content = request.get_json()
     title = content.get('title')
@@ -113,7 +94,6 @@ def add_book():
 
     client = bigquery.Client()
     table_id = "proiectcc-419616.datasetcarti.carti"
-
     rows_to_insert = [
         {
             "title": title,
@@ -129,9 +109,6 @@ def add_book():
     else:
         return jsonify({"errors": errors}), 400
 
-
-
 # A method that runs the application server.
 if __name__ == "__main__":
-    # Threaded option to enable multiple instances for multiple user access support
-    app.run(debug=False, threaded=True, port=5000)
+    app.run(debug=True, threaded=True, port=5000)
