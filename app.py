@@ -6,19 +6,22 @@ from google.cloud import bigquery
 # Init app
 app = Flask(__name__)
 
-
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
     return d
 
-
 # Flask maps HTTP requests to Python functions.
 # The process of mapping URLs to functions is called routing.
 @app.route('/', methods=['GET'])
 def home():
-    return "<h1>Distant Reading Archive</h1><p>This is a prototype API!!!</p>"
+    return """
+    <h1>Use these routes</h1>
+    <p>/api/v2/resources/bigquery-data</p>
+    <p>/api/v2/resources/books/by-author?author=David Brin</p>
+    <p>/api/v2/resources/books/by-year?published_year=2005</p>
+    """
 
 # Endpoint pentru obținerea tuturor cărților din BigQuery
 @app.route('/api/v2/resources/bigquery-data', methods=['GET'])
