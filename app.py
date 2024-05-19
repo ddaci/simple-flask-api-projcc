@@ -18,7 +18,7 @@ def dict_factory(cursor, row):
 # The process of mapping URLs to functions is called routing.
 @app.route('/', methods=['GET'])
 def home():
-    return "<h1>Distant Reading Archive</h1><p>This is a prototype API</p>"
+    return "<h1>Distant Reading Archive</h1><p>This is a prototype API!!!</p>"
 
 # Endpoint pentru obținerea tuturor cărților din BigQuery
 @app.route('/api/v2/resources/bigquery-data', methods=['GET'])
