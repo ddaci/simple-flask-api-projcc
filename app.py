@@ -95,8 +95,8 @@ def page_not_found(e):
 
 
 
-
-# Endpoint pentru adaugarea unei carti
+# Endpoint 4 pentru adaugarea unei carti
+# Funcția add_book() permite adăugarea unei noi cărți în baza de date BigQuery. Aceasta primește datele cărții sub formă de JSON într-o cerere POST și le adaugă în BigQuery. Dacă adăugarea reușește, returnează un mesaj de succes; altfel, returnează erorile întâmpinate
 @app.route('/api/v2/resources/books', methods=['POST'])
 def add_book():
     if not request.is_json:
@@ -128,6 +128,7 @@ def add_book():
         return jsonify({"message": "Book added successfully"}), 201
     else:
         return jsonify({"errors": errors}), 400
+
 
 
 # A method that runs the application server.
