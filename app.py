@@ -6,18 +6,12 @@ from google.cloud import bigquery
 # Init app
 app = Flask(__name__)
 
-def dict_factory(cursor, row):
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
-
 # Flask maps HTTP requests to Python functions.
 # The process of mapping URLs to functions is called routing.
 @app.route('/', methods=['GET'])
 def home():
     return """
-    <h1>Use these routes</h1>
+    <h1>Use the following routes</h1>
     <p>/api/v2/resources/bigquery-data</p>
     <p>/api/v2/resources/books/by-author?author=David Brin</p>
     <p>/api/v2/resources/books/by-year?published_year=2005</p>
@@ -51,7 +45,7 @@ def get_books_by_author():
 
     client = bigquery.Client()
     query = f"""
-        SELECT * FROM proiectcc-419616.datasetcarti.carti`
+        SELECT * FROM `proiectcc-419616.datasetcarti.carti`
         WHERE author = '{author}'
     """
     query_job = client.query(query)
@@ -102,7 +96,6 @@ def page_not_found(e):
 
 
 
-
 # Endpoint pentru adaugarea unei carti
 @app.route('/api/v2/resources/books', methods=['POST'])
 def add_book():
@@ -114,6 +107,9 @@ def add_book():
     author = content.get('author')
     published = content.get('published')
     first_sentence = content.get('first_sentence')
+
+    if not all([title, author, published, first_sentence]):
+        return jsonify({"error": "Missing required fields"}), 400
 
     client = bigquery.Client()
     table_id = "proiectcc-419616.datasetcarti.carti"
@@ -128,11 +124,10 @@ def add_book():
     ]
 
     errors = client.insert_rows_json(table_id, rows_to_insert)
-    if errors == []:
-        return jsonify(request.get_json())
+    if not errors:
+        return jsonify({"message": "Book added successfully"}), 201
     else:
         return jsonify({"errors": errors}), 400
-
 
 
 # A method that runs the application server.
